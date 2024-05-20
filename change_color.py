@@ -89,7 +89,7 @@ def change_color_face( canvas, img, num_label, color):
     tem_beta= beta[num_label]
     num_label = label_dict[num_label]
 
-    model = tf.keras.models.load_model("models/model_29_3.h5")
+    model = tf.keras.models.load_model("models/face_segmentation.h5")
 
     mask= find_mask(img, model, num_label)
 
@@ -162,10 +162,3 @@ def change_color_face( canvas, img, num_label, color):
 
 
 
-def main():
-    result= change_color_face(1, skin_rgb[3])
-    cv2.imshow("image", result)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-if __name__ == "__main__":
-    main()

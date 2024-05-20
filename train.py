@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     """ Paths """
     dataset_path = "D:/java_workspace/face_segmentation/lapa/LaPa/"
-    model_path = os.path.join("files", "model.h5")
+    model_path = os.path.join("files", "human_segmentaiton.h5")
     csv_path = os.path.join("files", "data.csv")
 
     """ RGB Code and Classes """

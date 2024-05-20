@@ -12,9 +12,7 @@ from ascii import create_ascii_image
 from photomosaic import create_photomosaic
 from cut_rotate import create_rotate, ImageCutter, zoom_image
 from change_color import change_color_face
-
-
-
+from change_background import change_human_background
 
 
 
@@ -60,6 +58,33 @@ def save_canvas_as_image():
             messagebox.showinfo("failed", "You don't have an image")
 
 
+def reset_images():
+    global file_path, color_image, saved_image
+    if file_path != "":
+        saved_image = color_image = cv2.imread(file_path)
+
+        image = Image.open(file_path)
+        width, height = image.size
+
+        # Tính toán tỷ lệ resize
+        width_ratio = canvas.winfo_width() / width
+        height_ratio = canvas.winfo_height() / height
+
+        # Lấy tỷ lệ resize tốt nhất để không vượt quá kích thước của canvas
+        resize_ratio = min(width_ratio, height_ratio)
+
+        # Resize ảnh với tỷ lệ đã tính toán
+        new_width = int(width * resize_ratio)
+        new_height = int(height * resize_ratio)
+
+        x_offset = (canvas.winfo_width() - new_width) // 2
+        y_offset = (canvas.winfo_height() - new_height) // 2
+
+        resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+        canvas_image = ImageTk.PhotoImage(resized_image)
+        canvas.delete("all")
+        canvas.create_image(x_offset, y_offset, image=canvas_image, anchor="nw")
+
 def add_image():
 
     global file_path, canvas_image, origin_image, color_image, saved_image
@@ -70,7 +95,7 @@ def add_image():
         file_path= temp
 
     if file_path!="":
-        saved_image=color_image= cv2.imread(file_path)
+        saved_image= color_image= cv2.imread(file_path)
 
         image = Image.open(file_path)
         width, height = image.size
@@ -93,10 +118,10 @@ def add_image():
 
         resized_image = image.resize((new_width, new_height), Image.LANCZOS)
         canvas_image = ImageTk.PhotoImage(resized_image)
-
-
         canvas.delete("all")
         canvas.create_image(x_offset, y_offset, image=canvas_image, anchor="nw")
+
+
 
         or_image = Image.open(file_path)
         or_image.thumbnail((200, 200))
@@ -106,6 +131,10 @@ def add_image():
         Label(original_image_frame, image=origin_image).grid(row=1, column=0, sticky="nsew")
         original_image_frame.columnconfigure(0, weight=1)
         original_image_frame.rowconfigure((0,1), weight=1)
+
+
+
+
 def update_image_canvas(event):
     global file_path, canvas_image, origin_image, color_image, saved_image
 
@@ -135,49 +164,60 @@ def update_image_canvas(event):
 
 
 def on_scale_changed(value):
+    reset_images()
     global saved_image
     value = int(value)
     saved_image=update_value(value, file_path, canvas)
 def on_scale_changed2(value):
+    reset_images()
     global saved_image
     value = int(value)
     saved_image=edge_detection(file_path, canvas,  value)
 
 def on_scale_changed3(value):
+    reset_images()
     global saved_image
     value = int(value)
     saved_image= change_blur(file_path, canvas,  value)
 def on_scale_changed4(value):
+    reset_images()
     global  saved_image
     value = int(value)
     saved_image= create_rotate(file_path,canvas, value)
 
 def on_scale_changed5(value):
+    reset_images()
     global saved_image
     value = int(value)
     saved_image= change_contrast(file_path, canvas, value)
 def on_scale_changed6(value):
+    reset_images()
     global  saved_image
     saved_image = create_photomosaic(file_path, canvas, value)
 def on_scale_change7():
+    reset_images()
     global saved_image
     saved_image= create_draw_frame(canvas, custom_frame)
 
 def on_scale_change8(value):
+    reset_images()
     global saved_image
     saved_image = apply_filter(value,file_path, canvas)
 
 
 def on_scale_change9(value):
+    reset_images()
     global saved_image
     value= int(value)
     saved_image = create_ascii_image(file_path, canvas, value, 1)
 def on_scale_change10(value):
+    reset_images()
     global saved_image
     value= int(value)
     saved_image = create_ascii_image(file_path, canvas, value, 0)
 
 def filter():
+    reset_images()
     for widget in custom_frame.winfo_children():
         widget.destroy()
     if file_path =="":
@@ -221,6 +261,7 @@ def filter():
 
 
 def change_to_ascii():
+    reset_images()
     for widget in custom_frame.winfo_children():
         widget.destroy()
     if file_path =="":
@@ -247,6 +288,7 @@ def change_to_ascii():
     button.pack(pady=15)
 
 def change_to_photomosaic():
+
     for widget in custom_frame.winfo_children():
         widget.destroy()
     if file_path == "":
@@ -272,6 +314,7 @@ def change_to_photomosaic():
     button.pack(pady=15)
 
 def rotate():
+    reset_images()
     for widget in custom_frame.winfo_children():
         widget.destroy()
     if file_path == "":
@@ -323,6 +366,7 @@ def switch():
 
 
 def cut():
+    reset_images()
     global on_button  # Khai báo biến on_button ở global scope
     for widget in custom_frame.winfo_children():
         widget.destroy()
@@ -354,8 +398,10 @@ def show_color_box():
         on_scale_change_color(item,choose_color)
 
 def on_scale_change_color(item, value):
-    global  saved_image, color_image, check_color_image
+    global  saved_image, color_image
     saved_image = color_image = change_color_face(canvas, color_image, item, value )
+
+
 
 def clear_image_color():
     global saved_image, color_image
@@ -369,6 +415,7 @@ def show_button(event):
 
 
 def change_color():
+    reset_images()
     global  listbox, change_color_button
     for widget in custom_frame.winfo_children():
         widget.destroy()
@@ -378,18 +425,32 @@ def change_color():
 
     listbox = customtkinter.CTkComboBox(custom_frame, values=["hair", "background", "skin", "eyebrow", "eye",  "nose", "lip", "mouth"], command=show_button)
     listbox.pack(side=tk.TOP, pady=5)
-    # # Thêm mục vào danh sách
-    # items = ["hair", "background", "skin", "eyebrow", "eye",  "nose", "lip", "mouth"]
-    # for item in items:
-    #     listbox.insert(tk.END, item)
-    # listbox.config(height=len(items))
 
     change_color_button = customtkinter.CTkButton(custom_frame, text="Change color", command= show_color_box)
     listbox.bind("<Button-1>", show_button)
     clear_color_button = customtkinter.CTkButton(custom_frame, text="clear all", command=clear_image_color)
     clear_color_button.pack(pady=5)
+def change_background():
+    reset_images()
+    global  listbox, change_color_button
+    for widget in custom_frame.winfo_children():
+        widget.destroy()
+    if file_path == "":
+        messagebox.showinfo("warning", "You have not imported any images yet!")
+        add_image()
 
 
+    change_bachground_button = customtkinter.CTkButton(custom_frame, text="Change background", command = on_change_background)
+    change_bachground_button.pack(pady=5)
+
+
+def on_change_background ():
+    global saved_image, color_image
+    back_ground_path = filedialog.askopenfilename(
+        initialdir="D:/java_workspace/face_segmentation/lapa/back_ground")
+    background_img= cv2.imread(back_ground_path)
+
+    saved_image = color_image = change_human_background(canvas, color_image, background_img)
 
 
 root.grid_columnconfigure((1, 2, 3), weight=1)
@@ -406,6 +467,8 @@ right_frame.grid_rowconfigure(4, weight=1)
 
 original_image_frame = customtkinter.CTkFrame(root, width=140, corner_radius=0)
 original_image_frame.grid(row=0, column=4, sticky="nsew", padx=(0,10), pady=(0,10))
+
+
 
 
 
@@ -435,9 +498,14 @@ scaling_optionmenu.grid(row=9, column=0, padx=20, pady=(10, 20))
 
 
 
+
+
 canvas = customtkinter.CTkCanvas(root, background="gray", borderwidth=2, relief="solid")
 canvas.grid(row=0, column=1, columnspan=3, rowspan=3, sticky="nsew", padx=30, pady=30)
 canvas.bind("<Configure>",update_image_canvas)
+
+
+
 
 
 
@@ -465,8 +533,10 @@ tools_menu.add_command(label="Photomosaic", command=change_to_photomosaic)
 menubar.add_cascade(label="Tools", menu=tools_menu)
 
 tools_menu = tk.Menu(menubar, tearoff=0)
-tools_menu.add_command(label="Change color", command=change_color)
-menubar.add_cascade(label="Color", menu=tools_menu)
+tools_menu.add_command(label="Background", command=change_background)
+tools_menu.add_command(label="Color ", command=change_color)
+menubar.add_cascade(label="Change", menu=tools_menu)
+
 
 help_ = tk.Menu(menubar, tearoff=0)
 help_.add_command(label='Tk Help', command=None)

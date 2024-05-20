@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     """ Paths """
     dataset_path = "D:/java_workspace/face_segmentation/lapa/LaPa"
-    model_path = os.path.join("models", "model_29_3.h5")
+    model_path = os.path.join("models", "face_segmentation.h5")
 
     """ RGB Code and Classes """
     rgb_codes = [
