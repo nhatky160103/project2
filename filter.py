@@ -1,25 +1,20 @@
 import tkinter as tk
-
-import cv2
 from PIL import Image, ImageOps, ImageTk, ImageFilter, ImageEnhance
+import cv2
 from PIL import Image, ImageTk
-from tkinter import ttk
-
 import numpy as np
 
-sobelx =np.array([[-1, 0, 1],[-2, 0, 2],[-1, 0, 1]])
-sobely=np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])#trích xuất dặc trưng theo đường ngang
-identity=np.array([[0,0,0],[0,1,0], [0,0,0]])
+
+sobelx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+sobely = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+identity = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
 
 edge_detection_kernel = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
-sharpen=np.array([[0,-1,0],[-1,5,-1], [0,-1,0]])
-
-
+sharpen = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
 
 
 def apply_custom_filter(image, kernel):
 
-    # Tạo các ảnh kênh màu riêng lẻ
     b, g, r = cv2.split(image)
 
     # Áp dụng filter cho từng kênh màu
@@ -35,31 +30,26 @@ def apply_custom_filter(image, kernel):
     return filtered_image
 
 
-
-
-def view_tear_off_action():
-    print("View menu has been torn off")
+def show_image(height, width, image,  canvas):
+    width_ratio = canvas.winfo_width() / width
+    height_ratio = canvas.winfo_height() / height
+    resize_ratio = min(width_ratio, height_ratio)
+    new_width = int(width * resize_ratio)
+    new_height = int(height * resize_ratio)
+    x_offset = (canvas.winfo_width() - new_width) // 2
+    y_offset = (canvas.winfo_height() - new_height) // 2
+    image = image.resize((new_width, new_height))
+    image = ImageTk.PhotoImage(image)
+    canvas.delete("all")
+    canvas.image = image
+    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
 
 
 def apply_filter(filter, file_path,  canvas):
 
-    print(file_path)
-    image= Image.open(file_path)
-
+    image = Image.open(file_path)
     width, height = image.size
-    # Tính toán tỷ lệ resize
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
 
-    # Lấy tỷ lệ resize tốt nhất để không vượt quá kích thước của canvas
-    resize_ratio = min(width_ratio, height_ratio)
-
-    # Resize ảnh với tỷ lệ đã tính toán
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
-
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
 
     if filter == "Black and White":
         image = ImageOps.grayscale(image)
@@ -73,8 +63,8 @@ def apply_filter(filter, file_path,  canvas):
         image = image.filter(ImageFilter.EMBOSS)
 
     elif filter == "sobel_x":
-        image= cv2.imread(file_path)
-        image= apply_custom_filter(image, sobelx)
+        image = cv2.imread(file_path)
+        image = apply_custom_filter(image, sobelx)
     elif filter == "sobel_y":
         image = cv2.imread(file_path)
         image = apply_custom_filter(image, sobely)
@@ -103,82 +93,45 @@ def apply_filter(filter, file_path,  canvas):
     image_rgb = image.convert('RGB')
     result = np.array(image_rgb)
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-    image = image.resize((new_width,new_height))
-    image = ImageTk.PhotoImage(image)
-    canvas.delete("all")
-    canvas.image = image
-    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
+
+    show_image(height, width, image,  canvas)
+
 
     return result
 
 
-def update_value(value,  file_path,  canvas):
+
+def change_light(value,  file_path,  canvas):
     box_blur = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]]) * (1 / (value+3))
-    image = Image.open(file_path)
 
-    width, height = image.size
-    # Tính toán tỷ lệ resize
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
-
-    # Lấy tỷ lệ resize tốt nhất để không vượt quá kích thước của canvas
-    resize_ratio = min(width_ratio, height_ratio)
-
-    # Resize ảnh với tỷ lệ đã tính toán
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
-
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
     image = cv2.imread(file_path)
-    image = apply_custom_filter(image, box_blur)
-    result= image = image.resize((new_width, new_height))
-    image = ImageTk.PhotoImage(image)
-    canvas.delete("all")
-    canvas.image = image
-    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
+    height,width,_ = image.shape
 
+    image = apply_custom_filter(image, box_blur)
+    result = image
     result = result.convert('RGB')
     result = np.array(result)
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+
+    show_image(height, width, image, canvas)
+
     return result
 
-import cv2
-from PIL import Image, ImageTk
 
-def edge_detection(file_path, canvas, value):
-    image_grey = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-    height, width = image_grey.shape
 
-    # Tính toán tỷ lệ resize
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
-    resize_ratio = min(width_ratio, height_ratio)
 
-    # Resize ảnh với tỷ lệ đã tính toán
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
+def edge_change(file_path, canvas, value):
+    image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
 
-    # Thực hiện phát hiện biên và chuyển đổi sang đối tượng Image
-    result = edges = cv2.Canny(image_grey, value*10, value*20)
-    edges_image = Image.fromarray(edges)
+    height, width = image.shape
 
-    # Resize ảnh
-    edges_image = edges_image.resize((new_width, new_height))
+    result = edges = cv2.Canny(image, value*10, value*20)
+    image = Image.fromarray(edges)
 
-    # Chuyển đổi thành đối tượng ImageTk
-    image = ImageTk.PhotoImage(edges_image)
+    show_image(height, width, image, canvas)
 
-    # Vị trí hiển thị trên canvas
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
+    result = cv2.cvtColor(result,  cv2.COLOR_BGR2RGB)
 
-    # Xóa hình ảnh hiện tại và vẽ ảnh mới lên canvas
-    canvas.delete("all")
-    canvas.image = image
-    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
-
-    result= cv2.cvtColor(result,  cv2.COLOR_BGR2RGB)
     return result
 
 
@@ -187,13 +140,6 @@ def change_to_threshold(file_path, canvas ):
     image_grey=cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
     height, width = image_grey.shape
 
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
-    resize_ratio = min(width_ratio, height_ratio)
-
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
-
     image_binary = np.zeros_like(image_grey)
     for i in range(image_grey.shape[0]):
         for j in range(image_grey.shape[1]):
@@ -201,22 +147,12 @@ def change_to_threshold(file_path, canvas ):
                 image_binary[i][j] = 255
             else:
                 image_binary[i][j] = 0
-    result= image_binary
-    image_binary = Image.fromarray(image_binary)
-
-    image_binary = image_binary.resize((new_width, new_height))
-
-    image = ImageTk.PhotoImage(image_binary)
-
-    # Vị trí hiển thị trên canvas
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
-
-    canvas.delete("all")
-    canvas.image = image
-    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
-
+    result = image_binary
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(image_binary)
+
+    show_image(height, width, image, canvas)
+
     return result
 
 
@@ -224,57 +160,26 @@ def change_blur(file_path, canvas, sigma):
     image_grey = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
     height, width = image_grey.shape
 
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
-    resize_ratio = min(width_ratio, height_ratio)
-
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
-
-    result= loss_image = cv2.GaussianBlur(image_grey, ksize = (13, 13), sigmaX=sigma/4)
-    loss_image = Image.fromarray(loss_image)
-
-    loss_image = loss_image.resize((new_width, new_height))
-
-    image = ImageTk.PhotoImage(loss_image)
-
-    # Vị trí hiển thị trên canvas
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
-
-    canvas.delete("all")
-    canvas.image = image
-    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
-
+    result = loss_image = cv2.GaussianBlur(image_grey, ksize = (13, 13), sigmaX=sigma/4)
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(loss_image)
+
+    show_image(height, width, image, canvas)
     return result
+
 
 def change_contrast(file_path,canvas, value):
     img = Image.open(file_path)
     width, height = img.size
 
-    width_ratio = canvas.winfo_width() / width
-    height_ratio = canvas.winfo_height() / height
-    resize_ratio = min(width_ratio, height_ratio)
-
-    new_width = int(width * resize_ratio)
-    new_height = int(height * resize_ratio)
-
     # Enhance constrast
     enhancer = ImageEnhance.Contrast(img)
     factor = value / 10.0
-    result=  new_img = enhancer.enhance(factor)
-
-    x_offset = (canvas.winfo_width() - new_width) // 2
-    y_offset = (canvas.winfo_height() - new_height) // 2
-
-    new_img = new_img.resize((new_width, new_height), Image.LANCZOS)
-
-    canvas.canvas_image = ImageTk.PhotoImage(new_img)
-    canvas.delete("all")
-    canvas.create_image(x_offset, y_offset, image=canvas.canvas_image, anchor="nw")
-
+    result = image = enhancer.enhance(factor)
     result = result.convert('RGB')
     result = np.array(result)
-    result=  cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+
+    show_image(height, width, image, canvas)
+
     return result

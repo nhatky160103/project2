@@ -3,9 +3,12 @@ import cv2
 from PIL import Image, ImageTk
 from tkinter import filedialog
 from tkinter import messagebox
+import numpy as np
 import tkinter as tk
+
+
 def create_rotate(file_path, canvas, angle):
-    # Đọc ảnh từ đường dẫn
+
     image = cv2.imread(file_path)
 
     height, width, dim = image.shape
@@ -16,28 +19,23 @@ def create_rotate(file_path, canvas, angle):
 
     new_width = int(width * resize_ratio)
     new_height = int(height * resize_ratio)
-    image= cv2.resize(image,(new_width, new_height))
+    image = cv2.resize(image,(new_width, new_height))
 
     x_offset = (canvas.winfo_width() - new_width) // 2
     y_offset = (canvas.winfo_height() - new_height) // 2
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-
-
     rotation_matrix = cv2.getRotationMatrix2D((new_width / 2, new_height / 2), angle, 1)
-    result= rotated_image = cv2.warpAffine(image, rotation_matrix, (new_width, new_height))
+    result = image = cv2.warpAffine(image, rotation_matrix, (new_width, new_height))
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+    image = Image.fromarray(image)
 
-
-    rotated_image = Image.fromarray(rotated_image)
-    image = ImageTk.PhotoImage(rotated_image)
-
-
-    # Xóa tất cả các đối tượng trên canvas và vẽ ảnh mới
+    image = ImageTk.PhotoImage(image)
     canvas.delete("all")
     canvas.image = image
     canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
-    result= cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+
     return result
 
 class ImageCutter:
@@ -50,7 +48,6 @@ class ImageCutter:
 
         height, width, dim = self.original_image.shape
 
-
         width_ratio = canvas.winfo_width() / width
         height_ratio = canvas.winfo_height() / height
         resize_ratio = min(width_ratio, height_ratio)
@@ -61,7 +58,6 @@ class ImageCutter:
 
         self.x_offset = (canvas.winfo_width() - new_width) // 2
         self.y_offset = (canvas.winfo_height() - new_height) // 2
-
 
         # Tạo các biến để lưu giữ tọa độ của điểm bắt đầu và kết thúc khi chọn vùng cắt
         self.start_x = None
@@ -117,29 +113,25 @@ def zoom_image(image_path, canvas):
     image = Image.open(image_path)
     image_width, image_height = image.size
 
-
-    x_offset = canvas.winfo_width()//2
-    y_offset = canvas.winfo_height()// 2
+    x_offset = canvas.winfo_width() // 2
+    y_offset = canvas.winfo_height() // 2
     tk_image = ImageTk.PhotoImage(image)
-
+    canvas.delete("all")
     image_on_canvas = canvas.create_image(x_offset, y_offset, anchor="center", image=tk_image)
 
     zoom_factor = 1.0
     zoom_step = 0.1
     start_x = None
     start_y = None
+    resized_image = None
 
     def zoom(event):
-        nonlocal zoom_factor, tk_image, image_on_canvas
+        nonlocal zoom_factor, tk_image, image_on_canvas, resized_image
         new_width = int(image_width * zoom_factor)
         new_height = int(image_height * zoom_factor)
-        x_offset= canvas.winfo_width()//2
-        y_offset = canvas.winfo_height() // 2
-
 
         if event.delta > 0 and zoom_factor:  # Zoom in
             zoom_factor += zoom_step
-
         elif event.delta < 0 and zoom_factor > zoom_step:  # Zoom out
             zoom_factor -= zoom_step
 
@@ -147,10 +139,11 @@ def zoom_image(image_path, canvas):
         tk_image = ImageTk.PhotoImage(resized_image)
 
         canvas.delete(image_on_canvas)
-        image_on_canvas = canvas.create_image(x_offset, y_offset,
-                                              anchor="center", image=tk_image)
+        image_on_canvas = canvas.create_image(x_offset, y_offset, anchor="center", image=tk_image)
 
         canvas.config(scrollregion=canvas.bbox("all"))
+
+    # Bind sự kiện MouseWheel để gọi hàm zoom
     canvas.bind("<MouseWheel>", zoom)
 
     def on_button_press(event):
@@ -168,3 +161,7 @@ def zoom_image(image_path, canvas):
 
     canvas.bind("<ButtonPress-1>", on_button_press)
     canvas.bind("<B1-Motion>", on_move_press)
+
+    return resized_image
+
+
