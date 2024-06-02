@@ -38,6 +38,34 @@ def create_rotate(file_path, canvas, angle):
 
     return result
 
+def create_flip(image, canvas, flipcode):
+
+    height, width, dim = image.shape
+
+    width_ratio = canvas.winfo_width() / width
+    height_ratio = canvas.winfo_height() / height
+    resize_ratio = min(width_ratio, height_ratio)
+
+    new_width = int(width * resize_ratio)
+    new_height = int(height * resize_ratio)
+    image = cv2.resize(image,(new_width, new_height))
+
+    x_offset = (canvas.winfo_width() - new_width) // 2
+    y_offset = (canvas.winfo_height() - new_height) // 2
+
+    image = cv2.flip(image, flipcode)
+    result = image
+    image = cv2. cvtColor(image, cv2.COLOR_BGR2RGB)
+
+
+    image = Image.fromarray(image)
+    image = ImageTk.PhotoImage(image)
+    canvas.delete("all")
+    canvas.image = image
+    canvas.create_image(x_offset, y_offset, image=image, anchor="nw")
+
+    return result
+
 class ImageCutter:
     def __init__(self, file_path, canvas):
         self.file_path = file_path

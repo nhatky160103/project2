@@ -77,9 +77,19 @@ def apply_filter(filter, file_path,  canvas):
     elif filter == "sharpen":
         image = cv2.imread(file_path)
         image = apply_custom_filter(image, sharpen)
+    elif filter == "gaussian noise":
+        image = cv2.imread(file_path)
+        image = add_gaussian_noise(image)
+    elif filter == "speckle noise":
+        image = cv2.imread(file_path)
+        image = add_speckle_noise(image)
+    elif filter == "salt noise":
+        image = cv2.imread(file_path)
+        image = add_salt_and_pepper_noise(image)
     elif filter == "vignette":
         image = cv2.imread(file_path)
         rows, cols = image.shape[:2]
+
 
         kernel_x = cv2.getGaussianKernel(cols, 200)
         kernel_y = cv2.getGaussianKernel(rows, 200)
@@ -157,12 +167,12 @@ def change_to_threshold(file_path, canvas ):
 
 
 def change_blur(file_path, canvas, sigma):
-    image_grey = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-    height, width = image_grey.shape
+    image = cv2.imread(file_path)
+    height, width,_ = image.shape
 
-    result = loss_image = cv2.GaussianBlur(image_grey, ksize = (13, 13), sigmaX=sigma/4)
+    result = loss_image = cv2.GaussianBlur(image, ksize = (13, 13), sigmaX=sigma/4)
     result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-    image = Image.fromarray(loss_image)
+    image = Image.fromarray(result)
 
     show_image(height, width, image, canvas)
     return result
@@ -183,3 +193,63 @@ def change_contrast(file_path,canvas, value):
     show_image(height, width, image, canvas)
 
     return result
+
+
+import cv2
+import numpy as np
+from PIL import Image
+
+def add_gaussian_noise(image, mean=0, var=0.01):
+    sigma = var**0.5
+    gaussian = np.random.normal(mean, sigma, image.shape)
+    noisy_image = np.clip(image + gaussian * 255, 0, 255).astype(np.uint8)
+    # Chuyển đổi từ numpy.ndarray sang PIL.Image
+    noisy_image = Image.fromarray(cv2.cvtColor(noisy_image, cv2.COLOR_BGR2RGB))
+    return noisy_image
+
+def add_speckle_noise(image):
+    row, col, ch = image.shape
+    gauss = np.random.randn(row, col, ch)
+    noisy_image = image + image * gauss
+    noisy_image = np.clip(noisy_image, 0, 255).astype(np.uint8)
+    # Chuyển đổi từ numpy.ndarray sang PIL.Image
+    noisy_image = Image.fromarray(cv2.cvtColor(noisy_image, cv2.COLOR_BGR2RGB))
+    return noisy_image
+
+def add_salt_and_pepper_noise(image, salt_prob=0.1, pepper_prob=0.1):
+    noisy = np.copy(image)
+    num_salt = np.ceil(salt_prob * image.size * 0.5)
+    num_pepper = np.ceil(pepper_prob * image.size * 0.5)
+
+    # Thêm nhiễu muối (salt)
+    coords = [np.random.randint(0, i - 1, int(num_salt)) for i in image.shape]
+    noisy[coords[0], coords[1], :] = 255
+
+    # Thêm nhiễu tiêu (pepper)
+    coords = [np.random.randint(0, i - 1, int(num_pepper)) for i in image.shape]
+    noisy[coords[0], coords[1], :] = 0
+
+    # Chuyển đổi từ numpy.ndarray sang PIL.Image
+    noisy_image = Image.fromarray(cv2.cvtColor(noisy, cv2.COLOR_BGR2RGB))
+    return noisy_image
+
+
+
+distortion_coeffs = np.array([0.15, 0.1, 0, 0, 0], dtype=np.float32)
+
+
+def undistort_image(file_path, canvas, scale):
+    img = cv2.imread(file_path)
+    width, height, _ = img.shape
+
+    camera_matrix = np.array([[800, 0, 0.5*(width-1)],
+                              [0, 800, 0.5*(height-1)],
+                              [0, 0, 1]])
+    new_camera_matrix = (scale/10) * camera_matrix
+    image = cv2.undistort(img, camera_matrix, distortion_coeffs, None, new_camera_matrix)
+    result = image
+    image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    show_image(height, width, image, canvas)
+
+    return result
+

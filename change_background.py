@@ -29,10 +29,10 @@ def dice_loss(y_true, y_pred):
 H = 512
 W = 512
 
-def change_human_background(canvas, img, background_img):
+def change_human_background(canvas, file_path, background_img):
     with CustomObjectScope({'iou': iou, 'dice_coef': dice_coef, 'dice_loss': dice_loss}):
         model = tf.keras.models.load_model("models/human_segmentaiton.h5")
-
+    img = cv2.imread(file_path)
     height, width, _ = img.shape
 
     # Resize and normalize the background image

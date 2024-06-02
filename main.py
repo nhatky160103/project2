@@ -4,13 +4,13 @@ from PIL import Image, ImageOps, ImageTk, ImageFilter
 from PIL import Image, ImageTk
 import numpy as np
 import cv2
-import io
+from help import show_help, show_demo, show_about
 from draw import create_draw_frame, get_drawing
-from filter import apply_filter, change_light, edge_change, change_to_threshold, change_blur, change_contrast
+from filter import apply_filter, change_light, edge_change, change_to_threshold, change_blur, change_contrast, undistort_image
 from tkinter import messagebox, PhotoImage, Button, ttk, filedialog, Label, colorchooser
 from ascii import create_ascii_image
 from photomosaic import create_photomosaic
-from cut_rotate import create_rotate, ImageCutter, zoom_image
+from cut_rotate import create_rotate, ImageCutter, zoom_image, create_flip
 from change_color import change_color_face
 from change_background import change_human_background
 
@@ -41,22 +41,33 @@ canvas_image = None
 color_image = None
 
 
+
 def save_canvas_as_image():
-    global saved_image
+    global saved_image, file_path
 
     if saved_image is not None:
         saved_image = saved_image.astype(np.uint8)
-        new_file_name = filedialog.asksaveasfilename(defaultextension=".jpg")
-        cv2.imwrite(new_file_name, saved_image)
-        messagebox.showinfo("success", "The image saved ")
+        new_file_name = filedialog.asksaveasfilename(defaultextension=".jpg",
+                                                     filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png"), ("All files", "*.*")])
+        if new_file_name:
+            result = cv2.imwrite(new_file_name, saved_image)
+            if result:
+                messagebox.showinfo("Success", "The image saved successfully")
+            else:
+                messagebox.showerror("Error", "Failed to save the image")
     else:
         if file_path != "":
             saved_image = cv2.imread(file_path)
-            new_file_name = filedialog.asksaveasfilename(defaultextension=".jpg")
-            cv2.imwrite(new_file_name, saved_image)
-            messagebox.showinfo("success", "The image saved ")
+            new_file_name = filedialog.asksaveasfilename(defaultextension=".jpg",
+                                                         filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png"), ("All files", "*.*")])
+            if new_file_name:
+                result = cv2.imwrite(new_file_name, saved_image)
+                if result:
+                    messagebox.showinfo("Success", "The image saved successfully")
+                else:
+                    messagebox.showerror("Error", "Failed to save the image")
         else:
-            messagebox.showinfo("failed", "You don't have an image")
+            messagebox.showerror("Error", "You don't have an image")
 
 
 def show_image():
@@ -169,9 +180,10 @@ def on_scale_changed6(value):
     global  saved_image
     saved_image = create_photomosaic(file_path, canvas, value)
 
-
-
-
+def on_scale_changed7(value):
+    show_image()
+    global  saved_image
+    saved_image = undistort_image(file_path, canvas, value)
 
 def test():
     global saved_image
@@ -218,7 +230,7 @@ def filter():
     filter_label.pack(pady= 10)
 
     filter_combobox = customtkinter.CTkComboBox(custom_frame, values=["Black and White", "Blur",
-                                                    "Emboss", "Sharpen", "Smooth","sobel_x", "sobel_y", "identity", "edge_detection", "sharpen", "vignette"]
+                                                    "Emboss", "Sharpen", "Smooth","sobel_x", "sobel_y", "identity", "edge_detection", "sharpen", "vignette", "gaussian noise", "speckle noise", "salt noise"]
                                                  ,command= on_scale_change8
                                                  )
     filter_combobox.pack(pady=5)
@@ -242,6 +254,11 @@ def filter():
     slider_label.pack(pady=7)
     slider = customtkinter.CTkSlider(custom_frame, from_=1, to=20, command=on_scale_changed5)
     slider.pack(pady=5, padx=(5,5))
+
+    slider_label = customtkinter.CTkLabel(custom_frame, text="change lense")
+    slider_label.pack(pady=7)
+    slider = customtkinter.CTkSlider(custom_frame, from_=1, to=20, command=on_scale_changed7)
+    slider.pack(pady=5, padx=(5, 5))
 
     button =customtkinter.CTkButton(custom_frame, text='Binary image', command=lambda :change_to_threshold(file_path, canvas))
     button.pack(pady=10)
@@ -318,6 +335,18 @@ def rotate():
     slider.bind("<B1-Motion>",update_label)
     value_label = tk.Label(custom_frame, text=str(slider.get()), font=("Arial", 16))
     value_label.pack()
+
+    flip_horizontal_button = customtkinter.CTkButton(custom_frame, text="HORIZONTAL FLIP", command = lambda : on_flip(1))
+    flip_horizontal_button.pack(pady= 10)
+    flip_vertical_button = customtkinter.CTkButton(custom_frame, text="VERTICAL FLIP",
+                                                     command = lambda: on_flip(0))
+    flip_vertical_button.pack(pady=10)
+
+
+def on_flip(mode):
+    global saved_image
+    saved_image = create_flip(saved_image, canvas, mode)
+
 
 
 def test_function():
@@ -461,12 +490,13 @@ def change_background():
 
 
 def on_change_background ():
-    global saved_image, color_image
+    global saved_image
     back_ground_path = filedialog.askopenfilename(
         initialdir="D:/java_workspace/face_segmentation/lapa/back_ground")
     background_img= cv2.imread(back_ground_path)
 
-    saved_image = color_image = change_human_background(canvas, color_image, background_img)
+
+    saved_image  = change_human_background(canvas, file_path, background_img)
 
 
 root.grid_columnconfigure((1, 2, 3), weight=1)
@@ -548,11 +578,12 @@ tools_menu.add_command(label="Color ", command=change_color)
 menubar.add_cascade(label="Change", menu=tools_menu)
 
 
+
 help_ = tk.Menu(menubar, tearoff=0)
-help_.add_command(label='Tk Help', command=None)
-help_.add_command(label='Demo', command=None)
+help_.add_command(label='Tk Help', command= lambda : show_help(root))
+help_.add_command(label='Demo', command= lambda:show_demo(root))
 help_.add_separator()
-help_.add_command(label='About Tk', command=None)
+help_.add_command(label='About Us', command=lambda: show_about(root))
 menubar.add_cascade(label='Help', menu=help_)
 
 root.config(menu=menubar)

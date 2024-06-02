@@ -49,6 +49,7 @@ def find_mask(image, model, num_label):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))#[[0,1,0][1,1,1][0,1,0]]
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
     return mask
 
 def convert_to_mask(y, num_label):
@@ -96,23 +97,21 @@ def change_color_face( canvas, img, num_label, color):
     # specify desired bgr color
     desired_color = color[::-1]
     desired_color = np.asarray(desired_color, dtype=np.float64)
-    print(desired_color)
 
 
     swatch = np.full((200,200,3), desired_color, dtype=np.uint8)
 
+
     # get average bgr color of mask
     avg_color = cv2.mean(img, mask=mask)[:3]
-    print("avg_color",avg_color)
-    print("desired color", desired_color)
 
 
     # compute difference colors and make into an image the same size as input
     diff_color = desired_color - avg_color
-    print("diff_color",diff_color)
+
     diff_color = np.full_like(img, diff_color, dtype=np.int32)
 
-    img2= img.astype(np.int32)
+    img2 = img.astype(np.int32)
 
     new_img = cv2.addWeighted(img2, 1, diff_color, tem_beta, 0)
     new_img = new_img.clip(0, 255).astype(np.uint8)
@@ -125,7 +124,8 @@ def change_color_face( canvas, img, num_label, color):
     # combine img and new_img using mask
     result = (img * (1 - mask) + new_img * mask)
     result = result.clip(0,255).astype(np.uint8)
-
+    print("result shape: ", result.shape)
+    print("result type", type(result))
 
 
 
