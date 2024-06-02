@@ -260,9 +260,13 @@ def filter():
     slider = customtkinter.CTkSlider(custom_frame, from_=1, to=20, command=on_scale_changed7)
     slider.pack(pady=5, padx=(5, 5))
 
-    button =customtkinter.CTkButton(custom_frame, text='Binary image', command=lambda :change_to_threshold(file_path, canvas))
+    button =customtkinter.CTkButton(custom_frame, text='Binary image', command=binary_image)
     button.pack(pady=10)
 
+
+def binary_image():
+    global saved_image
+    saved_image = change_to_threshold(file_path, canvas)
 
 def change_to_ascii():
     show_image()
