@@ -581,6 +581,11 @@ tools_menu.add_command(label="Background", command=change_background)
 tools_menu.add_command(label="Color ", command=change_color)
 menubar.add_cascade(label="Change", menu=tools_menu)
 
+tools_menu = tk.Menu(menubar, tearoff=0)
+tools_menu.add_command(label="sdt", command=lambda: show_about(root))
+tools_menu.add_command(label="email", command=lambda: show_about(root))
+menubar.add_cascade(label="liên hệ", menu=tools_menu)
+
 
 
 help_ = tk.Menu(menubar, tearoff=0)

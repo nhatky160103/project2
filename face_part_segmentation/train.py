@@ -71,7 +71,7 @@ if __name__ == "__main__":
     tf.random.set_seed(42)
 
     """ Directory for storing files """
-    create_dir("files")
+    create_dir("../files")
 
     """ Hyperparameters """
     image_h = 512
@@ -84,8 +84,8 @@ if __name__ == "__main__":
 
     """ Paths """
     dataset_path = "D:/java_workspace/face_segmentation/lapa/LaPa/"
-    model_path = os.path.join("files", "human_segmentaiton.h5")
-    csv_path = os.path.join("files", "data.csv")
+    model_path = os.path.join("../files", "human_segmentaiton.h5")
+    csv_path = os.path.join("../files", "data.csv")
 
     """ RGB Code and Classes """
     rgb_codes = [
